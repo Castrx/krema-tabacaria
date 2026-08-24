@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 
@@ -19,7 +18,7 @@ export function AboutKrema() {
     <section
       ref={sectionRef}
       id="a-krema"
-      className="overflow-hidden bg-[#080808] px-5 py-24 text-white md:px-8 md:py-32"
+      className="overflow-hidden bg-[#080808] px-5 py-14 text-white md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-7xl">
         <div className="grid items-center gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
@@ -42,11 +41,7 @@ export function AboutKrema() {
               ease: "easeOut",
             }}
           >
-            <p className="text-xs uppercase tracking-[0.35em] text-white/35">
-              A Krema
-            </p>
-
-            <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] md:text-6xl">
+            <h2 className="max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] md:text-6xl">
               Mais que uma tabacaria.
               <br />
               Uma experiência.
@@ -56,19 +51,6 @@ export function AboutKrema() {
               Um espaço criado para reunir produtos, acessórios e uma
               experiência que combina com diferentes estilos.
             </p>
-
-            <div className="mt-8 flex items-center gap-4">
-              <div className="h-px w-14 bg-[#d48a32]" />
-
-              <span className="text-[10px] uppercase tracking-[0.3em] text-white/35">
-                Arroio do Sal — RS
-              </span>
-            </div>
-
-            <div className="mt-10 inline-flex items-center gap-2 text-sm text-white/70">
-              Conheça a loja
-              <ArrowUpRight className="size-4" />
-            </div>
           </motion.div>
 
           {/* Imagem */}

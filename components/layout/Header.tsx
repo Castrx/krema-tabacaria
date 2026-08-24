@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   Menu,
-  ShoppingBag,
   Search,
   Camera,
   MapPin,
@@ -12,6 +11,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { CartButton } from "@/components/cart/CartButton";
+import { CartSheet } from "@/components/cart/CartSheet";
 
 const navItems = [
   { label: "Produtos", href: "#produtos" },
@@ -55,8 +56,6 @@ export function Header() {
           backgroundColor: scrolled
             ? "rgba(8, 8, 8, 0.84)"
             : "rgba(8, 8, 8, 0)",
-          paddingTop: scrolled ? "0.65rem" : "1rem",
-          paddingBottom: scrolled ? "0.65rem" : "1rem",
         }}
         transition={{
           duration: 0.25,
@@ -64,82 +63,89 @@ export function Header() {
         }}
         className="fixed inset-x-0 top-0 z-50 border-b border-white/10 backdrop-blur-md"
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 md:px-8">
-          {/* Desktop logo */}
-          <Link
-            href="/"
+        <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+          {/* Desktop row */}
+          <motion.div
+            initial={false}
+            animate={{
+              paddingTop: scrolled ? "0.45rem" : "0.65rem",
+              paddingBottom: scrolled ? "0.45rem" : "0.65rem",
+            }}
+            transition={{
+              duration: 0.25,
+              ease: "easeOut",
+            }}
             className="hidden items-center md:flex"
-            aria-label="Krema - início"
           >
-            <img
-              src="/brand/krema-logo.png"
-              alt="Krema Tabacaria e Head Shop"
-              className="h-12 w-auto object-contain"
-            />
-          </Link>
+            {/* Desktop logo */}
+            <Link
+              href="/"
+              className="flex shrink-0 items-center"
+              aria-label="Krema - início"
+            >
+              <motion.img
+                src="/brand/krema-logo.png"
+                alt="Krema Tabacaria e Head Shop"
+                initial={false}
+                animate={{
+                  width: scrolled ? 51 : 59,
+                  height: scrolled ? 51 : 59,
+                }}
+                transition={{
+                  duration: 0.25,
+                  ease: "easeOut",
+                }}
+                className="object-contain"
+              />
+            </Link>
 
-          {/* Desktop navigation */}
-          <nav
-            className="hidden items-center gap-1 md:flex"
-            aria-label="Navegação principal"
-          >
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-white/75 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            {/* Desktop navigation */}
+            <nav
+              className="ml-8 flex items-center gap-8"
+              aria-label="Navegação principal"
+            >
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-full px-2 py-2 text-sm font-medium text-white/75 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Desktop actions */}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                aria-label="Pesquisar"
+                className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
               >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+                <Search className="size-5" />
+              </button>
 
-          {/* Desktop actions */}
-          <div className="hidden items-center gap-1 md:flex">
-            <button
-              type="button"
-              aria-label="Pesquisar"
-              className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
-              <Search className="size-4" />
-            </button>
+              <a
+                href="https://instagram.com/krematabacaria"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram da Krema"
+                className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
+              >
+                <Camera className="size-5" />
+              </a>
 
-            <a
-              href="https://instagram.com/krematabacaria"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram da Krema"
-              className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
-              <Camera className="size-4" />
-            </a>
+              <CartButton />
+            </div>
+          </motion.div>
 
-            <a
-              href="https://wa.me/5551992729284"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp da Krema"
-              className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
-              <MessageCircle className="size-4" />
-            </a>
-
-            <button
-              type="button"
-              aria-label="Sacola"
-              className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
-              <ShoppingBag className="size-4" />
-            </button>
-          </div>
-
-          {/* Mobile */}
-          <div className="flex w-full items-center justify-between md:hidden">
+          {/* Mobile row */}
+          <div className="flex items-center justify-between py-2.5 md:hidden">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menu"
-              className="rounded-full p-2.5 text-white transition hover:bg-white/10"
+              className="-ml-1 rounded-full p-3 text-white transition hover:bg-white/10 active:bg-white/15"
             >
               <Menu className="size-5" />
             </button>
@@ -148,22 +154,16 @@ export function Header() {
               <img
                 src="/brand/krema-logo.png"
                 alt="Krema"
-                className="h-10 w-auto object-contain"
+                className="h-11 w-auto object-contain"
               />
             </Link>
 
-            <a
-              href="https://wa.me/5551992729284"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp da Krema"
-              className="rounded-full p-2.5 text-white transition hover:bg-white/10"
-            >
-              <MessageCircle className="size-5" />
-            </a>
+            <CartButton className="-mr-1 p-3 text-white active:bg-white/15" />
           </div>
         </div>
       </motion.header>
+
+      <CartSheet />
 
       {/* Mobile menu */}
       <AnimatePresence>

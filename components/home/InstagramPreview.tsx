@@ -26,27 +26,19 @@ export function InstagramPreview() {
   return (
     <section
       id="instagram"
-      className="overflow-hidden bg-[#080808] px-5 py-24 text-white md:px-8 md:py-32"
+      className="overflow-hidden bg-[#080808] px-5 py-14 text-white md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 flex flex-col gap-6 md:mb-16 md:flex-row md:items-end md:justify-between">
+        <div className="mb-8 flex flex-col gap-6 md:mb-16 md:flex-row md:items-end md:justify-between">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="text-xs uppercase tracking-[0.35em] text-white/35">
-              Instagram
-            </p>
-
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
+            <h2 className="text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
               Acompanhe a Krema.
             </h2>
-
-            <p className="mt-5 max-w-xl text-sm leading-7 text-white/45 md:text-base">
-              Novidades, produtos e tudo que está acontecendo na loja.
-            </p>
           </motion.div>
 
           <a

@@ -7,7 +7,7 @@ export function Location() {
   return (
     <section
       id="localizacao"
-      className="bg-[#080808] px-5 py-24 text-white md:px-8 md:py-32"
+      className="bg-[#080808] px-5 py-14 text-white md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-7xl">
         <div className="grid overflow-hidden rounded-[2rem] border border-white/[0.07] bg-[#101010] lg:grid-cols-[1fr_0.85fr]">
@@ -20,21 +20,12 @@ export function Location() {
             className="flex flex-col justify-between p-7 md:p-10 lg:p-14"
           >
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/35">
-                Visite a Krema
-              </p>
-
-              <h2 className="mt-5 max-w-xl text-4xl font-semibold tracking-[-0.04em] md:text-6xl">
+              <h2 className="max-w-xl text-4xl font-semibold tracking-[-0.04em] md:text-6xl">
                 A experiência começa aqui.
               </h2>
-
-              <p className="mt-6 max-w-lg text-sm leading-7 text-white/45 md:text-base">
-                Encontre a Krema no centro de Arroio do Sal e venha conhecer
-                nossa seleção de produtos e acessórios.
-              </p>
             </div>
 
-            <div className="mt-12">
+            <div className="mt-8">
               <div className="flex items-start gap-4">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
                   <MapPin className="size-5 text-white/70" />
@@ -83,7 +74,7 @@ export function Location() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.9, ease: "easeOut" }}
-            className="relative min-h-[380px] overflow-hidden bg-[#171717] lg:min-h-full"
+            className="relative min-h-[240px] overflow-hidden bg-[#171717] lg:min-h-full"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(212,138,50,0.15),transparent_42%)]" />
 
@@ -111,11 +102,7 @@ export function Location() {
 
             <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-white/30">
-                  Localização
-                </p>
-
-                <p className="mt-2 text-sm text-white/65">
+                <p className="text-sm text-white/65">
                   Centro · Arroio do Sal
                 </p>
               </div>
