@@ -1,7 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
+
+// Componente animável combinando next/image (otimização) com Motion
+// (parallax via style) — necessário porque o efeito é aplicado direto na
+// imagem, não em um wrapper.
+const MotionImage = motion.create(Image);
 
 export function AboutKrema() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -21,7 +27,7 @@ export function AboutKrema() {
       className="overflow-hidden bg-[#080808] px-5 py-14 text-white md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
           {/* Texto */}
           <motion.div
             initial={{
@@ -47,13 +53,12 @@ export function AboutKrema() {
               Uma experiência.
             </h2>
 
-            <p className="mt-7 max-w-lg text-sm leading-8 text-white/50 md:text-base">
-              Um espaço criado para reunir produtos, acessórios e uma
-              experiência que combina com diferentes estilos.
+            <p className="mt-7 max-w-md text-sm leading-8 text-white/50 md:text-base">
+              Produtos, acessórios e atmosfera para diferentes estilos.
             </p>
           </motion.div>
 
-          {/* Imagem */}
+          {/* Imagem — fallback temporário, trocar por fotografia real da loja */}
           <motion.div
             initial={{
               opacity: 0,
@@ -71,29 +76,22 @@ export function AboutKrema() {
               duration: 0.8,
               ease: "easeOut",
             }}
-            className="relative"
           >
-            <div className="relative overflow-hidden rounded-[2rem] bg-[#111]">
-              <motion.img
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] bg-[#111] md:aspect-[16/10]">
+              <MotionImage
                 src="/hero/hero-krema.png"
                 alt="Interior da Krema Tabacaria e Head Shop"
+                fill
+                sizes="(min-width: 1024px) 55vw, 100vw"
                 style={{
                   y: imageY,
                   scale: imageScale,
                 }}
-                className="aspect-[4/5] h-full w-full object-cover md:aspect-[16/10]"
+                className="object-cover"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/5" />
-
-              <div className="absolute bottom-5 left-5 rounded-full border border-white/10 bg-black/35 px-4 py-2 text-[10px] uppercase tracking-[0.28em] text-white/60 backdrop-blur-md md:bottom-6 md:left-6">
-                Krema Tabacaria & Head Shop
-              </div>
             </div>
-
-            {/* Elemento decorativo */}
-            <div className="pointer-events-none absolute -bottom-4 -left-4 hidden size-24 rounded-full border border-[#d48a32]/20 md:block" />
-            <div className="pointer-events-none absolute -right-5 -top-5 hidden size-16 rounded-full border border-white/10 md:block" />
           </motion.div>
         </div>
       </div>

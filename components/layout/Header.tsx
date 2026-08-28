@@ -1,28 +1,65 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Menu,
-  Search,
-  Camera,
   MapPin,
   MessageCircle,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { CartButton } from "@/components/cart/CartButton";
 import { CartSheet } from "@/components/cart/CartSheet";
+import { ProductSearchButton } from "@/components/product/ProductSearch";
 
+// Combina next/image (otimização) com a animação de encolher no scroll,
+// que anima width/height diretamente na imagem do logo desktop.
+const MotionImage = motion.create(Image);
+
+// Itens de navegação por âncora da Home. Fora da Home, "id" vira "/#id" —
+// exceto quando há uma rota própria (ex.: Produtos → /produtos).
 const navItems = [
-  { label: "Produtos", href: "#produtos" },
-  { label: "Categorias", href: "#categorias" },
-  { label: "Marcas", href: "#marcas" },
-  { label: "A Krema", href: "#a-krema" },
-  { label: "Localização", href: "#localizacao" },
+  { label: "Produtos", id: "produtos", awayHref: "/produtos" },
+  { label: "Categorias", id: "categorias" },
+  { label: "Marcas", id: "marcas" },
+  { label: "A Krema", id: "a-krema" },
+  { label: "Localização", id: "localizacao" },
 ];
 
+function resolveNavHref(
+  item: { id: string; awayHref?: string },
+  isHome: boolean,
+) {
+  if (isHome) return `#${item.id}`;
+  return item.awayHref ?? `/#${item.id}`;
+}
+
+// lucide-react não inclui ícones de marca — SVG local no estilo dos demais ícones (stroke, 24x24)
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
 export function Header() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -83,9 +120,12 @@ export function Header() {
               className="flex shrink-0 items-center"
               aria-label="Krema - início"
             >
-              <motion.img
+              <MotionImage
                 src="/brand/krema-logo.png"
                 alt="Krema Tabacaria e Head Shop"
+                width={150}
+                height={150}
+                priority
                 initial={false}
                 animate={{
                   width: scrolled ? 51 : 59,
@@ -106,8 +146,8 @@ export function Header() {
             >
               {navItems.map((item) => (
                 <Link
-                  key={item.href}
-                  href={item.href}
+                  key={item.id}
+                  href={resolveNavHref(item, isHome)}
                   className="rounded-full px-2 py-2 text-sm font-medium text-white/75 transition-colors duration-200 hover:bg-white/10 hover:text-white"
                 >
                   {item.label}
@@ -117,13 +157,7 @@ export function Header() {
 
             {/* Desktop actions */}
             <div className="ml-auto flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                aria-label="Pesquisar"
-                className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
-              >
-                <Search className="size-5" />
-              </button>
+              <ProductSearchButton />
 
               <a
                 href="https://instagram.com/krematabacaria"
@@ -132,7 +166,7 @@ export function Header() {
                 aria-label="Instagram da Krema"
                 className="rounded-full p-2.5 text-white/75 transition hover:bg-white/10 hover:text-white"
               >
-                <Camera className="size-5" />
+                <InstagramIcon className="size-5" />
               </a>
 
               <CartButton />
@@ -151,14 +185,20 @@ export function Header() {
             </button>
 
             <Link href="/" aria-label="Krema - início">
-              <img
+              <Image
                 src="/brand/krema-logo.png"
                 alt="Krema"
+                width={150}
+                height={150}
+                priority
                 className="h-11 w-auto object-contain"
               />
             </Link>
 
-            <CartButton className="-mr-1 p-3 text-white active:bg-white/15" />
+            <div className="-mr-1 flex items-center">
+              <ProductSearchButton className="p-3 text-white active:bg-white/15" />
+              <CartButton className="p-3 text-white active:bg-white/15" />
+            </div>
           </div>
         </div>
       </motion.header>
@@ -190,9 +230,11 @@ export function Header() {
                   onClick={() => setMenuOpen(false)}
                   aria-label="Krema - início"
                 >
-                  <img
+                  <Image
                     src="/brand/krema-logo.png"
                     alt="Krema"
+                    width={150}
+                    height={150}
                     className="h-10 w-auto"
                   />
                 </Link>
@@ -213,7 +255,7 @@ export function Header() {
               >
                 {navItems.map((item, index) => (
                   <motion.div
-                    key={item.href}
+                    key={item.id}
                     initial={{
                       opacity: 0,
                       x: -16,
@@ -229,7 +271,7 @@ export function Header() {
                     }}
                   >
                     <Link
-                      href={item.href}
+                      href={resolveNavHref(item, isHome)}
                       onClick={() => setMenuOpen(false)}
                       className="block border-b border-white/10 py-5 text-3xl font-medium tracking-tight text-white transition-colors hover:text-white/60"
                     >
@@ -246,7 +288,7 @@ export function Header() {
                   rel="noreferrer"
                   className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-white transition hover:bg-white/[0.08]"
                 >
-                  <Camera className="size-5" />
+                  <InstagramIcon className="size-5" />
                   <span className="text-xs text-white/65">
                     Instagram
                   </span>
@@ -265,7 +307,7 @@ export function Header() {
                 </a>
 
                 <a
-                  href="#localizacao"
+                  href={resolveNavHref({ id: "localizacao" }, isHome)}
                   onClick={() => setMenuOpen(false)}
                   className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-white transition hover:bg-white/[0.08]"
                 >

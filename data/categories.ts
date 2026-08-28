@@ -1,4 +1,4 @@
-import type { ProductCategory } from "@/data/products";
+import type { ProductCategory } from "@/types/product";
 
 export type Category = {
   id: ProductCategory;

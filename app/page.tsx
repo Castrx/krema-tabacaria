@@ -7,8 +7,11 @@ import { Location } from "@/components/home/Location";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/home/Hero";
+import { getFeaturedProducts } from "@/lib/products";
 
-export default function Home() {
+export default async function Home() {
+  const featuredProducts = await getFeaturedProducts();
+
   return (
     <main className="min-h-screen bg-[#080808] text-white">
       <Header />
@@ -17,7 +20,7 @@ export default function Home() {
 
       <Categories />
 
-      <FeaturedProducts />
+      <FeaturedProducts products={featuredProducts} />
 
       <Brands />
 

@@ -1,108 +1,133 @@
-import Link from "next/link";
-import {
-  ArrowUpRight,
-  Camera,
-  MessageCircle,
-  MapPin,
-} from "lucide-react";
+"use client";
 
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowUpRight, MapPin } from "lucide-react";
+import { usePathname } from "next/navigation";
+
+// Itens de navegação por âncora da Home. Fora da Home, "id" vira "/#id" —
+// exceto quando há uma rota própria (ex.: Produtos → /produtos).
 const links = [
-  { label: "Produtos", href: "#produtos" },
-  { label: "Categorias", href: "#categorias" },
-  { label: "Marcas", href: "#marcas" },
-  { label: "A Krema", href: "#a-krema" },
-  { label: "Localização", href: "#localizacao" },
+  { label: "Produtos", id: "produtos", awayHref: "/produtos" },
+  { label: "Categorias", id: "categorias" },
+  { label: "Marcas", id: "marcas" },
+  { label: "A Krema", id: "a-krema" },
+  { label: "Localização", id: "localizacao" },
 ];
 
-export function Footer() {
+function resolveNavHref(
+  item: { id: string; awayHref?: string },
+  isHome: boolean,
+) {
+  if (isHome) return `#${item.id}`;
+  return item.awayHref ?? `/#${item.id}`;
+}
+
+// lucide-react não inclui ícones de marca — SVGs locais (24x24, mesmo box dos ícones lucide)
+function InstagramIcon({ className }: { className?: string }) {
   return (
-    <footer className="border-t border-white/[0.07] bg-[#050505] text-white">
-      <div className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1fr_auto] lg:items-start">
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 0C8.74 0 8.333.014 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.014 8.333 0 8.74 0 12s.014 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.986 8.74 24 12 24s3.667-.014 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.058-1.28.072-1.687.072-4.947s-.014-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.014 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.897 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.897-.419-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.86.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.645-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.36.101 11.943c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 005.71 1.447h.005c6.582 0 11.94-5.363 11.943-11.946 0-3.19-1.242-6.19-3.473-8.4" />
+    </svg>
+  );
+}
+
+export function Footer() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
+  return (
+    <footer className="border-t border-white/[0.07] bg-[#050505] px-5 py-12 text-white md:px-8 md:py-16">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16">
+          {/* Logo + descrição + endereço */}
           <div>
             <Link href="/" aria-label="Krema - início">
-              <img
+              <Image
                 src="/brand/krema-logo.png"
                 alt="Krema Tabacaria e Head Shop"
+                width={150}
+                height={150}
                 className="h-14 w-auto object-contain"
               />
             </Link>
 
-            <p className="mt-6 max-w-md text-sm leading-7 text-white/40">
+            <p className="mt-5 max-w-sm text-sm leading-7 text-white/40">
               Tabacaria & Head Shop em Arroio do Sal, RS.
               <br />
               Produtos, acessórios e estilo.
             </p>
-          </div>
 
-          <nav
-            aria-label="Links do rodapé"
-            className="grid grid-cols-2 gap-x-10 gap-y-4 sm:grid-cols-3 lg:grid-cols-5"
-          >
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm text-white/50 transition hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="my-12 h-px bg-white/[0.07]" />
-
-        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-white/25">
-              Visite a loja
-            </p>
-
-            <p className="mt-3 text-sm text-white/55">
+            <p className="mt-4 text-sm text-white/55">
               Rua Paulista, nº 37 · Centro
               <br />
               Arroio do Sal — RS
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="https://instagram.com/krematabacaria"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+          {/* Navegação + ações */}
+          <div className="lg:flex lg:flex-col lg:items-start lg:justify-self-end">
+            <nav
+              aria-label="Links do rodapé"
+              className="flex flex-wrap gap-x-8 gap-y-3"
             >
-              <Camera className="size-4" />
-              Instagram
-              <ArrowUpRight className="size-3.5" />
-            </a>
+              {links.map((link) => (
+                <Link
+                  key={link.id}
+                  href={resolveNavHref(link, isHome)}
+                  className="text-sm text-white/50 transition hover:text-white"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
 
-            <a
-              href="https://wa.me/5551992729284"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <MessageCircle className="size-4" />
-              WhatsApp
-              <ArrowUpRight className="size-3.5" />
-            </a>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="https://instagram.com/krematabacaria"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                <InstagramIcon className="size-4" />
+                Instagram
+                <ArrowUpRight className="size-3.5" />
+              </a>
 
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <MapPin className="size-4" />
-              Localização
-              <ArrowUpRight className="size-3.5" />
-            </a>
+              <a
+                href="https://wa.me/5551992729284"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                <WhatsAppIcon className="size-4" />
+                WhatsApp
+                <ArrowUpRight className="size-3.5" />
+              </a>
+
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                <MapPin className="size-4" />
+                Localização
+                <ArrowUpRight className="size-3.5" />
+              </a>
+            </div>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/[0.07] pt-6 text-[10px] uppercase tracking-[0.2em] text-white/20 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/[0.07] pt-6 text-[10px] uppercase tracking-[0.2em] text-white/20 sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 Krema</span>
           <span>Tabacaria & Head Shop</span>
         </div>

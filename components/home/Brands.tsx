@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "motion/react";
 import {
   Carousel,
@@ -12,13 +13,17 @@ import {
 type Brand = {
   name: string;
   logo: string;
+  width: number;
+  height: number;
 };
 
+// width/height = dimensões intrínsecas reais do arquivo (evita decode
+// borrado em iOS Safari; não altera o tamanho exibido, controlado por CSS).
 const brands: Brand[] = [
-  { name: "Squadafum", logo: "/brands/squadafum.png" },
-  { name: "RAW", logo: "/brands/raw.png" },
-  { name: "FireStar", logo: "/brands/FireStar.png" },
-  { name: "Sadhu", logo: "/brands/sadhu.png" },
+  { name: "Squadafum", logo: "/brands/squadafum.png", width: 345, height: 307 },
+  { name: "RAW", logo: "/brands/raw.png", width: 697, height: 286 },
+  { name: "FireStar", logo: "/brands/FireStar.png", width: 193, height: 144 },
+  { name: "Sadhu", logo: "/brands/sadhu.png", width: 1165, height: 340 },
 ];
 
 export function Brands() {
@@ -43,9 +48,13 @@ export function Brands() {
             {brands.map((brand) => (
               <CarouselItem key={brand.name} className="basis-auto pl-8 md:pl-14">
                 <div className="flex h-16 items-center sm:h-24 md:h-32">
-                  <img
+                  <Image
                     src={brand.logo}
                     alt={`Logo da marca ${brand.name}`}
+                    width={brand.width}
+                    height={brand.height}
+                    sizes="(min-width: 768px) 220px, 160px"
+                    loading="eager"
                     className="h-full w-auto object-contain opacity-90 transition duration-300 hover:scale-105 hover:opacity-100"
                   />
                 </div>

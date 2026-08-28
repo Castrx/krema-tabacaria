@@ -1,42 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { MessageCircle } from "lucide-react";
-import type { CartItem } from "@/components/cart/CartProvider";
-import { products } from "@/data/products";
+import { useCart } from "@/components/cart/CartProvider";
 
 const WHATSAPP_NUMBER = "5551992729284";
 
-const currencyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
+/**
+ * Antes de abrir o WhatsApp, registra o pedido no Supabase (POST
+ * /api/orders) — preço, nome, rótulo da variante e subtotal são
+ * resolvidos e a mensagem é montada no servidor (lib/orders.ts), nunca a
+ * partir do que está no carrinho local. O client só envia productId +
+ * variantId (quando o item tiver variante) + quantity — exatamente o que
+ * já está em CartItem, sem nenhum dado derivado calculado aqui.
+ */
+export function WhatsAppOrderLink() {
+  const { items } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-function buildOrderMessage(items: CartItem[], subtotal: number) {
-  const lines = items
-    .map((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      if (!product) return null;
-
-      return `${item.quantity}x ${product.name} — ${currencyFormatter.format(product.price)} (preço demonstrativo)`;
-    })
-    .filter((line): line is string => Boolean(line));
-
-  return [
-    "Olá! Quero fazer um pedido na Krema:",
-    "",
-    ...lines,
-    "",
-    `Subtotal (demonstrativo): ${currencyFormatter.format(subtotal)}`,
-  ].join("\n");
-}
-
-export function WhatsAppOrderLink({
-  items,
-  subtotal,
-}: {
-  items: CartItem[];
-  subtotal: number;
-}) {
   if (items.length === 0) {
     return (
       <button
@@ -51,18 +33,69 @@ export function WhatsAppOrderLink({
     );
   }
 
-  const message = buildOrderMessage(items, subtotal);
-  const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  const handleClick = async () => {
+    if (isSubmitting) return;
+
+    // Abre a aba já no clique, de forma síncrona (gesto direto do
+    // usuário) — se esperássemos o fetch terminar para só então chamar
+    // window.open(), o navegador bloquearia como pop-up.
+    const whatsappTab = window.open("", "_blank", "noopener,noreferrer");
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.error ?? `Não foi possível criar o pedido (${response.status}).`,
+        );
+      }
+
+      const { message } = (await response.json()) as {
+        orderId: string;
+        message: string;
+      };
+      const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+      if (whatsappTab) {
+        whatsappTab.location.href = href;
+      } else {
+        // Pop-up bloqueado mesmo com a abertura síncrona (raro) — navega a
+        // aba atual como alternativa, em vez de falhar silenciosamente.
+        window.location.href = href;
+      }
+    } catch (err) {
+      whatsappTab?.close();
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar o pedido. Tente novamente.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
-    >
-      <MessageCircle className="size-4" />
-      Enviar pedido pelo WhatsApp
-    </a>
+    <div className="flex w-full flex-col gap-2">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isSubmitting}
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <MessageCircle className="size-4" />
+        {isSubmitting ? "Enviando pedido..." : "Enviar pedido pelo WhatsApp"}
+      </button>
+
+      {error && <p className="text-center text-xs text-red-400">{error}</p>}
+    </div>
   );
 }

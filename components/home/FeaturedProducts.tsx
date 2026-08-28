@@ -3,25 +3,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
-import { products } from "@/data/products";
+import type { Product } from "@/types/product";
 import { ProductGrid } from "@/components/product/ProductGrid";
 
-const featuredProductIds = [
-  "sadhu-black-edition",
-  "firestar-planet-signos",
-  "cinzeiro-squadafum-quadrado",
-  "bong-colter-laranja",
-  "worldfire-emborrachado",
-  "kit-acessorios-case",
-  "firestar-mini-torch",
-  "cinzeiro-tonabe-hype",
-];
-
-const featuredProducts = featuredProductIds
-  .map((id) => products.find((product) => product.id === id))
-  .filter((product): product is (typeof products)[number] => Boolean(product));
-
-export function FeaturedProducts() {
+// Destaques resolvidos no servidor (app/page.tsx) via getFeaturedProducts()
+// — is_featured no Supabase é a fonte de verdade, não uma lista de ids
+// hardcoded aqui.
+export function FeaturedProducts({ products }: { products: Product[] }) {
   return (
     <section
       id="produtos"
@@ -48,7 +36,7 @@ export function FeaturedProducts() {
           </Link>
         </div>
 
-        <ProductGrid products={featuredProducts} />
+        <ProductGrid products={products} />
 
         <Link
           href="/produtos"

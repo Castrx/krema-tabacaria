@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus, X } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowUpRight, Minus, Plus, X } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -11,12 +13,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/cart/CartProvider";
-import type { Product } from "@/data/products";
+import type { Product, ProductVariant } from "@/types/product";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
+
+function variantLabel(variant: ProductVariant): string {
+  return [variant.color, variant.model].filter(Boolean).join(" · ") || variant.sku;
+}
 
 export function ProductQuickView({
   product,
@@ -30,15 +36,49 @@ export function ProductQuickView({
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
 
+  const variants = product.variants ?? [];
+  const hasVariants = variants.length > 0;
+
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    variants.length === 1 ? variants[0].id : null,
+  );
+
+  const selectedVariant = hasVariants
+    ? (variants.find((v) => v.id === selectedVariantId) ?? null)
+    : null;
+
+  const effectivePrice = selectedVariant?.price ?? product.price;
+  const isSoldOut = selectedVariant !== null && selectedVariant.stockQuantity === 0;
+  const canAdd = !hasVariants || (selectedVariant !== null && !isSoldOut);
+
   const handleOpenChange = (next: boolean) => {
     onOpenChange(next);
-    if (!next) setQuantity(1);
+    if (!next) {
+      setQuantity(1);
+      setSelectedVariantId(variants.length === 1 ? variants[0].id : null);
+    }
   };
 
+  // addItem(productId, variantId, quantity) preserva a variante
+  // selecionada — mesma linha de carrinho só se junta se for o mesmo
+  // produto E a mesma variante (ver isSameLine em CartProvider.tsx).
   const handleAdd = () => {
-    addItem(product.id, quantity);
+    if (!canAdd) return;
+    addItem(product.id, selectedVariant?.id, quantity);
     handleOpenChange(false);
   };
+
+  // Fecha o Quick View ao navegar para a página completa do produto.
+  const handleViewFullProduct = () => {
+    handleOpenChange(false);
+  };
+
+  let buttonLabel = "Adicionar ao carrinho";
+  if (hasVariants && !selectedVariant) {
+    buttonLabel = "Selecione uma opção";
+  } else if (isSoldOut) {
+    buttonLabel = "Esgotado";
+  }
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -60,10 +100,12 @@ export function ProductQuickView({
 
         <div className="flex-1 overflow-y-auto px-4">
           <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#141414]">
-            <img
+            <Image
               src={product.images[0] ?? product.image}
               alt={product.name}
-              className="h-full w-full object-cover"
+              fill
+              sizes="384px"
+              className="object-cover"
             />
 
             {product.priceIsProvisional && (
@@ -84,13 +126,55 @@ export function ProductQuickView({
               {product.name}
             </h2>
 
-            <p className="mt-2 text-lg font-semibold text-white">
-              {currencyFormatter.format(product.price)}
+            <Link
+              href={`/produtos/${product.slug}`}
+              onClick={handleViewFullProduct}
+              className="mt-1.5 inline-flex items-center gap-1 text-xs text-white/40 transition hover:text-white/70"
+            >
+              Ver produto completo
+              <ArrowUpRight className="size-3" />
+            </Link>
+
+            <p className="mt-3 text-lg font-semibold text-white">
+              {currencyFormatter.format(effectivePrice)}
             </p>
 
             <p className="mt-4 text-sm leading-6 text-white/60">
               {product.shortDescription}
             </p>
+
+            {hasVariants && (
+              <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+                  Cor / modelo
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((variant) => {
+                    const soldOut = variant.stockQuantity === 0;
+                    const selected = variant.id === selectedVariantId;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        disabled={soldOut}
+                        onClick={() => setSelectedVariantId(variant.id)}
+                        aria-pressed={selected}
+                        className={
+                          soldOut
+                            ? "cursor-not-allowed rounded-full border border-white/5 px-3 py-1.5 text-xs text-white/25"
+                            : selected
+                              ? "rounded-full border border-white bg-white px-3 py-1.5 text-xs font-medium text-black transition"
+                              : "rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 transition hover:border-white/40 hover:text-white"
+                        }
+                      >
+                        {variantLabel(variant)}
+                        {soldOut && " · Esgotado"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {product.specs && product.specs.length > 0 && (
               <ul className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4">
@@ -137,9 +221,10 @@ export function ProductQuickView({
             <button
               type="button"
               onClick={handleAdd}
-              className="flex-1 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+              disabled={!canAdd}
+              className="flex-1 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Adicionar ao carrinho
+              {buttonLabel}
             </button>
           </div>
 

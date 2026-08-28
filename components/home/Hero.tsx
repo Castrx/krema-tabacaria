@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
@@ -48,10 +49,13 @@ export function Hero() {
         }}
         className="absolute inset-0"
       >
-        <img
+        <Image
           src="/hero/hero-krema.png"
           alt="Interior da Krema Tabacaria e Head Shop"
-          className="h-full w-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
       </motion.div>
 

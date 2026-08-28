@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowUpRight, Camera } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -69,10 +70,12 @@ export function InstagramPreview() {
               }}
               className="group relative aspect-square overflow-hidden rounded-2xl bg-[#111]"
             >
-              <img
+              <Image
                 src={post.image}
                 alt={post.alt}
-                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                fill
+                sizes="(min-width: 768px) 25vw, 50vw"
+                className="object-cover transition duration-700 group-hover:scale-105"
               />
 
               <div className="absolute inset-0 bg-black/0 transition duration-500 group-hover:bg-black/20" />

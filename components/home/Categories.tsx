@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
+
+// Combina next/image (otimização) com o hover animado do Motion na própria imagem.
+const MotionImage = motion.create(Image);
 
 const categories = [
   {
@@ -85,10 +89,12 @@ export function Categories() {
                 href={category.href}
                 className="group relative block h-full min-h-[230px] overflow-hidden rounded-[2rem] bg-[#111] md:min-h-0"
               >
-                <motion.img
+                <MotionImage
                   src={category.image}
                   alt={category.title}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  fill
+                  sizes="(min-width: 768px) 50vw, 50vw"
+                  className="object-cover"
                   whileHover={{
                     scale: 1.06,
                   }}
