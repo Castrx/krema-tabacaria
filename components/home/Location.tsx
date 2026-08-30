@@ -5,10 +5,17 @@ import { motion } from "motion/react";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 const MAPS_EMBED_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
-const MAPS_QUERY =
-  "Krema Tabacaria e Head Shop, Rua Paulista, 37 - Centro, Arroio do Sal - RS";
+// Sem o nome do negócio de propósito: o Google Maps já tem um cadastro de
+// Google Business Profile para "Krema Tabacaria e Head Shop" num endereço
+// DIFERENTE (R. Castro Alves, 47) — incluir o nome na busca faz o Google
+// sempre corresponder a esse cadastro desatualizado, em vez do endereço
+// abaixo, independente do modo da API (testado em "place" e "search").
+// Só o endereço, sem o nome, geocodifica corretamente para o endereço
+// oficial confirmado pelo proprietário. Atualizar o Google Business Profile
+// da Krema é uma ação separada, fora deste código.
+const MAPS_QUERY = "Rua Paulista, 37, Centro, Arroio do Sal, RS, 95585-000";
 const MAPS_DIRECTIONS_URL =
-  "https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS";
+  "https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS+95585-000";
 
 export function Location() {
   return (
@@ -37,13 +44,11 @@ export function Location() {
 
               <div>
                 <p className="text-sm font-medium text-white">
-                  Arroio do Sal — RS
+                  Arroio do Sal - RS
                 </p>
 
                 <p className="mt-1 text-sm text-white/45">
-                  Rua Paulista, nº 37
-                  <br />
-                  Centro
+                  Rua Paulista, 37 · Centro
                 </p>
               </div>
             </div>

@@ -68,9 +68,9 @@ export function Footer() {
             </p>
 
             <p className="mt-4 text-sm text-white/55">
-              Rua Paulista, nº 37 · Centro
+              Rua Paulista, 37 · Centro
               <br />
-              Arroio do Sal — RS
+              Arroio do Sal - RS
             </p>
           </div>
 
@@ -115,7 +115,7 @@ export function Footer() {
               </a>
 
               <a
-                href="https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS"
+                href="https://www.google.com/maps/search/?api=1&query=Rua+Paulista+37+Centro+Arroio+do+Sal+RS+95585-000"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
@@ -128,8 +128,33 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/[0.07] pt-6 text-[10px] uppercase tracking-[0.2em] text-white/20 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-4 border-t border-white/[0.07] pt-6 text-[10px] uppercase tracking-[0.2em] text-white/20 sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 Krema</span>
+
+          <nav
+            aria-label="Links legais"
+            className="flex flex-wrap items-center gap-x-6 gap-y-2"
+          >
+            <Link
+              href="/politica-de-privacidade"
+              className="transition hover:text-white/50"
+            >
+              Política de Privacidade
+            </Link>
+            <Link
+              href="/termos-de-uso"
+              className="transition hover:text-white/50"
+            >
+              Termos de Uso
+            </Link>
+            <Link
+              href="/trocas-e-devolucoes"
+              className="transition hover:text-white/50"
+            >
+              Trocas e Devoluções
+            </Link>
+          </nav>
+
           <span>Tabacaria & Head Shop</span>
         </div>
       </div>

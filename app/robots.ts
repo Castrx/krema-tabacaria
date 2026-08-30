@@ -10,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
       // só a instrução de crawling para os buscadores).
       disallow: "/admin",
     },
-    sitemap: "https://krema-tabacaria.vercel.app/sitemap.xml",
+    sitemap: "https://krematabacaria.com.br/sitemap.xml",
   };
 }

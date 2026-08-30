@@ -28,11 +28,17 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ products });
   } catch (error) {
-    // Não esconde o erro: devolve a mensagem real para o cliente poder
-    // diagnosticar, em vez de um catálogo vazio disfarçado de sucesso.
-    const message =
-      error instanceof Error ? error.message : "Erro desconhecido";
+    // Detalhe completo só no log do servidor — nunca no corpo da resposta.
+    // Esta rota é pública (qualquer origem pode chamá-la), então a
+    // mensagem real (que pode incluir detalhe interno do Postgres/Supabase)
+    // fica só aqui; o cliente recebe só o genérico abaixo. Status HTTP
+    // preservado: 500 continua sendo "falha real de servidor" — um id
+    // inexistente nunca cai neste catch, já volta como array vazio.
+    console.error("[api/products] Falha ao carregar produtos:", error);
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Não foi possível carregar os produtos." },
+      { status: 500 },
+    );
   }
 }

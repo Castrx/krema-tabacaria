@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllProductSlugs } from "@/lib/products";
 
-const SITE_URL = "https://krema-tabacaria.vercel.app";
+const SITE_URL = "https://krematabacaria.com.br";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllProductSlugs();

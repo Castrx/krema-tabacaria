@@ -8,4 +8,4 @@
  * pedido (WhatsAppOrderLink). Mudar o número da loja é alterar só esta
  * linha — nunca editar um `wa.me/...` hardcoded de novo.
  */
-export const WHATSAPP_NUMBER = "5551992729284";
+export const WHATSAPP_NUMBER = "5551989412199";

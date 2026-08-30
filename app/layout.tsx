@@ -30,7 +30,7 @@ const SOCIAL_IMAGE = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://krema-tabacaria.vercel.app"),
+  metadataBase: new URL("https://krematabacaria.com.br"),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   openGraph: {
