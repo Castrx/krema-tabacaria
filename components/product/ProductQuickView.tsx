@@ -13,6 +13,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/cart/CartProvider";
+import {
+  ProductImagePlaceholder,
+  resolveProductImageUrl,
+} from "@/components/product/ProductImagePlaceholder";
 import type { Product, ProductVariant } from "@/types/product";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -38,6 +42,7 @@ export function ProductQuickView({
 
   const variants = product.variants ?? [];
   const hasVariants = variants.length > 0;
+  const imageUrl = resolveProductImageUrl(product);
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     variants.length === 1 ? variants[0].id : null,
@@ -100,13 +105,17 @@ export function ProductQuickView({
 
         <div className="flex-1 overflow-y-auto px-4">
           <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#141414]">
-            <Image
-              src={product.images[0] ?? product.image}
-              alt={product.name}
-              fill
-              sizes="384px"
-              className="object-cover"
-            />
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={product.name}
+                fill
+                sizes="384px"
+                className="object-cover"
+              />
+            ) : (
+              <ProductImagePlaceholder className="absolute inset-0" />
+            )}
 
             {product.priceIsProvisional && (
               <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70 backdrop-blur-md">

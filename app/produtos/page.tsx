@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductsCatalog } from "@/components/product/ProductsCatalog";
 import { getAllProducts } from "@/lib/products";
+
+// Só o canonical é definido aqui — title/description/openGraph/twitter
+// continuam herdados do RootLayout (mesmo critério de app/page.tsx).
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/produtos",
+  },
+};
 
 // Server Component: busca o catálogo no Supabase (lib/products.ts) no
 // servidor. Erros de consulta não são capturados aqui de propósito — se

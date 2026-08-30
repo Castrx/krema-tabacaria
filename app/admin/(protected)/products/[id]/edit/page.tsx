@@ -4,13 +4,16 @@ import {
   getCategoriesForAdmin,
   getProductForEdit,
   getVariantsForProduct,
+  getImagesForProduct,
 } from "@/lib/admin/products";
 import { ProductForm } from "../../ProductForm";
 import { VariantsSection } from "../../VariantsSection";
+import { ImagesSection } from "../../ImagesSection";
 
 // Protegido pelo layout (requireAdmin()) — não precisa checar de novo
 // aqui, só as Server Actions de escrita (updateProductAction,
-// create/update/toggle/deleteVariantAction) precisam.
+// create/update/toggle/deleteVariantAction, update/deleteImageAction)
+// precisam.
 export default async function EditProductPage({
   params,
 }: {
@@ -18,11 +21,12 @@ export default async function EditProductPage({
 }) {
   const { id } = await params;
 
-  const [product, brands, categories, variants] = await Promise.all([
+  const [product, brands, categories, variants, images] = await Promise.all([
     getProductForEdit(id),
     getBrandsForAdmin(),
     getCategoriesForAdmin(),
     getVariantsForProduct(id),
+    getImagesForProduct(id),
   ]);
 
   if (!product) {
@@ -42,6 +46,8 @@ export default async function EditProductPage({
         brands={brands}
         categories={categories}
       />
+
+      <ImagesSection productId={product.id} images={images} />
 
       <VariantsSection
         productId={product.id}

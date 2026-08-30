@@ -11,6 +11,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ProductQuickView } from "@/components/product/ProductQuickView";
+import {
+  ProductImagePlaceholder,
+  resolveProductImageUrl,
+} from "@/components/product/ProductImagePlaceholder";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -165,7 +169,9 @@ export function ProductSearchButton({ className }: { className?: string }) {
               </p>
             ) : (
               <ul className="flex flex-col gap-1 py-2">
-                {results.map((product) => (
+                {results.map((product) => {
+                  const imageUrl = resolveProductImageUrl(product);
+                  return (
                   <li key={product.id}>
                     <button
                       type="button"
@@ -173,13 +179,17 @@ export function ProductSearchButton({ className }: { className?: string }) {
                       className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.06]"
                     >
                       <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-[#141414]">
-                        <Image
-                          src={product.images[0] ?? product.image}
-                          alt={product.name}
-                          width={56}
-                          height={56}
-                          className="h-full w-full object-cover"
-                        />
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={product.name}
+                            width={56}
+                            height={56}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ProductImagePlaceholder className="h-full w-full" />
+                        )}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -198,7 +208,8 @@ export function ProductSearchButton({ className }: { className?: string }) {
                       </span>
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>

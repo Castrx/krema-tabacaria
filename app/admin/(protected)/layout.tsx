@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { signOutAction } from "./actions";
 
@@ -19,8 +20,18 @@ export default async function AdminProtectedLayout({
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-        <span className="text-sm font-semibold">Painel administrativo</span>
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-4">
+        <div className="flex items-center gap-6">
+          <span className="text-sm font-semibold">Painel administrativo</span>
+          <nav className="flex items-center gap-4 text-sm text-white/60">
+            <Link href="/admin" className="transition hover:text-white">
+              Produtos
+            </Link>
+            <Link href="/admin/orders" className="transition hover:text-white">
+              Pedidos
+            </Link>
+          </nav>
+        </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-white/60">{user.email}</span>
           <form action={signOutAction}>

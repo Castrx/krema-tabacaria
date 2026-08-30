@@ -3,8 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowDown, ArrowRight } from "lucide-react";
-import { motion, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { useRef } from "react";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null);
@@ -14,10 +20,34 @@ export function Hero() {
     offset: ["start start", "end start"],
   });
 
-  const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.06]);
+  // useScroll()+useTransform() ligados direto a `style` (parallax) não
+  // passam pelo motor de animação da Motion — diferente de
+  // initial/animate/whileHover/whileInView (usados no resto do site), o
+  // MotionConfig reducedMotion="user" em MotionConfigProvider não alcança
+  // isto. Por isso, só aqui e em AboutKrema.tsx, colapsa-se manualmente o
+  // intervalo de saída para "sem deslocamento/zoom" quando o usuário pede
+  // "reduzir movimento" — a opacidade do texto continua desvanecendo
+  // normalmente (opacidade não é um valor posicional/causador de motion
+  // sickness), então o conteúdo nunca deixa de aparecer, só perde o
+  // parallax.
+  const shouldReduceMotion = useReducedMotion();
 
-  const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "-8%"]);
+  const imageY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? ["0%", "0%"] : ["0%", "12%"],
+  );
+  const imageScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [1, 1] : [1, 1.06],
+  );
+
+  const contentY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? ["0%", "0%"] : ["0%", "-8%"],
+  );
   const contentOpacity = useTransform(
     scrollYProgress,
     [0, 0.75],
@@ -172,7 +202,7 @@ export function Hero() {
               </Link>
 
               <a
-                href="https://wa.me/5551992729284?text=Olá%20Krema!%20Vi%20o%20site%20e%20quero%20saber%20mais%20sobre%20os%20produtos."
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Olá%20Krema!%20Vi%20o%20site%20e%20quero%20saber%20mais%20sobre%20os%20produtos.`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition duration-300 hover:bg-white/10"

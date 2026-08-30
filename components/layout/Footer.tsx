@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 // Itens de navegação por âncora da Home. Fora da Home, "id" vira "/#id" —
 // exceto quando há uma rota própria (ex.: Produtos → /produtos).
@@ -103,7 +104,7 @@ export function Footer() {
               </a>
 
               <a
-                href="https://wa.me/5551992729284"
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"

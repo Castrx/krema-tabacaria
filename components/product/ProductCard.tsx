@@ -7,6 +7,10 @@ import { Check, Plus } from "lucide-react";
 import { motion } from "motion/react";
 import type { Product } from "@/types/product";
 import { useCart } from "@/components/cart/CartProvider";
+import {
+  ProductImagePlaceholder,
+  resolveProductImageUrl,
+} from "@/components/product/ProductImagePlaceholder";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -28,6 +32,7 @@ export function ProductCard({ product }: { product: Product }) {
   // variante; com variante, ele simplesmente não aparece, e a imagem/
   // título (já são <Link>) levam pra página onde dá pra escolher.
   const hasVariants = (product.variants?.length ?? 0) > 0;
+  const imageUrl = resolveProductImageUrl(product);
 
   const handleAdd = (event: MouseEvent<HTMLButtonElement>) => {
     // Botão fica sobreposto à área da imagem — nunca deve disparar a
@@ -47,15 +52,19 @@ export function ProductCard({ product }: { product: Product }) {
           aria-label={`Ver produto completo: ${product.name}`}
           className="absolute inset-0 z-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
         >
-          <MotionImage
-            src={product.images[0] ?? product.image}
-            alt={product.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            className="object-cover"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          />
+          {imageUrl ? (
+            <MotionImage
+              src={imageUrl}
+              alt={product.name}
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+              className="object-cover"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          ) : (
+            <ProductImagePlaceholder className="absolute inset-0" />
+          )}
         </Link>
 
         {product.priceIsProvisional && (

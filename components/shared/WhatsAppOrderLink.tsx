@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
-
-const WHATSAPP_NUMBER = "5551992729284";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 /**
  * Antes de abrir o WhatsApp, registra o pedido no Supabase (POST

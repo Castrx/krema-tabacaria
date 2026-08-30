@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { useRef } from "react";
 
 // Componente animável combinando next/image (otimização) com Motion
@@ -17,8 +22,22 @@ export function AboutKrema() {
     offset: ["start end", "end start"],
   });
 
-  const imageY = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1.04, 1]);
+  // Mesmo caso de Hero.tsx: parallax via useScroll()+useTransform() ligado
+  // direto a `style` não passa pelo MotionConfig reducedMotion="user" de
+  // MotionConfigProvider (que só cobre initial/animate/whileHover/
+  // whileInView) — por isso o colapso manual do intervalo aqui.
+  const shouldReduceMotion = useReducedMotion();
+
+  const imageY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? ["0%", "0%"] : ["-6%", "6%"],
+  );
+  const imageScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [1, 1] : [1.04, 1],
+  );
 
   return (
     <section

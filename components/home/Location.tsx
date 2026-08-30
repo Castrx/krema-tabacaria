@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, MapPin, MessageCircle } from "lucide-react";
 import { motion } from "motion/react";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 const MAPS_EMBED_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
 const MAPS_QUERY =
@@ -59,7 +60,7 @@ export function Location() {
               </a>
 
               <a
-                href="https://wa.me/5551992729284?text=Olá%20Krema!%20Vi%20o%20site%20e%20quero%20saber%20mais."
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Olá%20Krema!%20Vi%20o%20site%20e%20quero%20saber%20mais.`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-6 py-3.5 text-sm font-semibold text-white transition duration-300 hover:bg-white/[0.08]"

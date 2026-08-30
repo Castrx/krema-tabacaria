@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { CartButton } from "@/components/cart/CartButton";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { ProductSearchButton } from "@/components/product/ProductSearch";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 // Combina next/image (otimização) com a animação de encolher no scroll,
 // que anima width/height diretamente na imagem do logo desktop.
@@ -295,7 +296,7 @@ export function Header() {
                 </a>
 
                 <a
-                  href="https://wa.me/5551992729284"
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-white transition hover:bg-white/[0.08]"

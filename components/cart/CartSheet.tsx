@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/cart/CartProvider";
 import { WhatsAppOrderLink } from "@/components/shared/WhatsAppOrderLink";
+import {
+  ProductImagePlaceholder,
+  resolveProductImageUrl,
+} from "@/components/product/ProductImagePlaceholder";
 import type { ProductVariant } from "@/types/product";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -85,6 +89,7 @@ export function CartSheet() {
                 if (item.variantId && !variant) return null;
 
                 const price = getItemPrice(item);
+                const imageUrl = resolveProductImageUrl(product);
 
                 return (
                   <li
@@ -92,13 +97,17 @@ export function CartSheet() {
                     className="flex gap-3"
                   >
                     <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-[#141414]">
-                      <Image
-                        src={product.images[0] ?? product.image}
-                        alt={product.name}
-                        width={80}
-                        height={80}
-                        className="h-full w-full object-cover"
-                      />
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={product.name}
+                          width={80}
+                          height={80}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ProductImagePlaceholder className="h-full w-full" />
+                      )}
                     </div>
 
                     <div className="flex flex-1 flex-col justify-between">

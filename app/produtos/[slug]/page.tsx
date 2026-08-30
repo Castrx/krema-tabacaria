@@ -6,6 +6,10 @@ import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductAddToCart } from "@/components/product/ProductAddToCart";
+import {
+  ProductImagePlaceholder,
+  resolveProductImageUrl,
+} from "@/components/product/ProductImagePlaceholder";
 import { categories } from "@/data/categories";
 import { getAllProductSlugs, getProductBySlug } from "@/lib/products";
 
@@ -15,6 +19,11 @@ export async function generateStaticParams() {
   const slugs = await getAllProductSlugs();
   return slugs.map((slug) => ({ slug }));
 }
+
+// Mesma foto real da loja usada no OG padrão do site (app/layout.tsx) —
+// fallback só para o caso raro de um produto sem nenhuma imagem cadastrada,
+// nunca inventa arte nova.
+const FALLBACK_SOCIAL_IMAGE = "/hero/hero-krema.png";
 
 export async function generateMetadata({
   params,
@@ -30,9 +39,36 @@ export async function generateMetadata({
     };
   }
 
+  const title = `${product.name} | Krema Tabacaria`;
+  const description = product.shortDescription;
+  const canonicalPath = `/produtos/${slug}`;
+  // Mesma regra usada para renderizar a imagem principal na própria página
+  // (ver <Image>/<ProductImagePlaceholder> abaixo) — nunca resolve de novo
+  // aqui. null (produto sem nenhuma imagem cadastrada) cai no fallback do
+  // site, nunca numa URL vazia.
+  const socialImage = resolveProductImageUrl(product) ?? FALLBACK_SOCIAL_IMAGE;
+
   return {
-    title: `${product.name} | Krema Tabacaria`,
-    description: product.shortDescription,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      siteName: "Krema Tabacaria",
+      locale: "pt_BR",
+      type: "website",
+      images: [{ url: socialImage, alt: product.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [socialImage],
+    },
   };
 }
 
@@ -49,6 +85,7 @@ export default async function ProductPage({
   }
 
   const category = categories.find((c) => c.id === product.category);
+  const imageUrl = resolveProductImageUrl(product);
 
   return (
     <main className="min-h-screen bg-[#080808] text-white">
@@ -67,14 +104,18 @@ export default async function ProductPage({
           <div className="mt-6 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
             {/* Imagem */}
             <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-[#111]">
-              <Image
-                src={product.images[0] ?? product.image}
-                alt={product.name}
-                fill
-                priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover"
-              />
+              {imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={product.name}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <ProductImagePlaceholder className="absolute inset-0" />
+              )}
 
               {product.priceIsProvisional && (
                 <span className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white/70 backdrop-blur-md">

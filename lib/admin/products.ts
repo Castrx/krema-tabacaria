@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServiceClient } from "@/lib/supabase/service";
 
 // Camada de dados do admin para produtos — leitura e escrita SEMPRE via
@@ -689,4 +691,394 @@ export async function deleteVariant(variantId: string): Promise<void> {
       `[lib/admin/products] Falha ao remover variante: ${error.message}`,
     );
   }
+}
+
+// =============================================================================
+// Imagens (product_images) — tabela já existe no Supabase. Nenhuma
+// migration nova nesta etapa: só visualizar, reordenar e remover as
+// linhas já cadastradas. Upload continua fora de escopo (nada de
+// Supabase Storage ainda) — o campo `images` no modelo público
+// (types/product.ts / lib/products.ts) não é tocado, só a leitura/escrita
+// administrativa aqui.
+//
+// Mesmo padrão de autorização do resto do módulo: sempre service role,
+// requireAdmin() é responsabilidade de quem chama (Server Actions em
+// app/admin/(protected)/products/imageActions.ts).
+// =============================================================================
+
+export type AdminProductImage = {
+  id: string;
+  url: string;
+  position: number;
+  altText: string | null;
+};
+
+type ProductImageRow = {
+  id: string;
+  url: string;
+  position: number;
+  alt_text: string | null;
+};
+
+/** Todas as imagens de um produto, ordenadas pela posição atual
+ * (0 = principal). */
+export async function getImagesForProduct(
+  productId: string,
+): Promise<AdminProductImage[]> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, url, position, alt_text")
+    .eq("product_id", productId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `[lib/admin/products] Falha ao carregar imagens: ${error.message}`,
+    );
+  }
+
+  return (data as ProductImageRow[]).map((row) => ({
+    id: row.id,
+    url: row.url,
+    position: row.position,
+    altText: row.alt_text,
+  }));
+}
+
+/**
+ * Reatribui position = 0..N-1 às imagens de um produto, na ordem exata
+ * de `orderedIds`. Em duas fases, porque UNIQUE(product_id, position) no
+ * banco rejeitaria um UPDATE que tentasse usar uma posição que outra
+ * linha do mesmo produto ainda ocupa: primeiro empurra todas as posições
+ * atuais para valores negativos — nunca colidem entre si (posições
+ * atuais já eram únicas, então -(pos+1) também são) nem com os valores
+ * finais (sempre >= 0) — só depois grava os valores finais. Nunca existe
+ * um instante em que duas linhas do mesmo produto dividem a mesma
+ * position.
+ *
+ * Negativo, não um deslocamento positivo grande (ex.: +100000): a coluna
+ * é `smallint` no Postgres (intervalo -32768..32767) — um offset fixo
+ * "bem alto" pode facilmente estourar esse limite. Um valor negativo
+ * pequeno nunca estoura, não importa quantas imagens o produto tenha.
+ *
+ * `currentImages` precisa refletir a position ATUAL (antes desta chamada)
+ * de cada imagem em `orderedIds` — usada só para a fase 1.
+ */
+async function renumberProductImages(
+  supabase: SupabaseClient,
+  currentImages: { id: string; position: number }[],
+  orderedIds: string[],
+): Promise<void> {
+  for (const image of currentImages) {
+    const { error } = await supabase
+      .from("product_images")
+      .update({ position: -(image.position + 1) })
+      .eq("id", image.id);
+
+    if (error) {
+      throw new Error(
+        `[lib/admin/products] Falha ao reordenar imagens (fase 1): ${error.message}`,
+      );
+    }
+  }
+
+  for (let index = 0; index < orderedIds.length; index++) {
+    const { error } = await supabase
+      .from("product_images")
+      .update({ position: index })
+      .eq("id", orderedIds[index]);
+
+    if (error) {
+      throw new Error(
+        `[lib/admin/products] Falha ao reordenar imagens (fase 2): ${error.message}`,
+      );
+    }
+  }
+}
+
+/** Confere que o produto existe — mesma checagem usada tanto por
+ * setImagePosition quanto por deleteProductImage, para rejeitar de
+ * forma clara uma chamada com productId inexistente. */
+async function assertProductExists(
+  supabase: SupabaseClient,
+  productId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `[lib/admin/products] Falha ao verificar produto: ${error.message}`,
+    );
+  }
+  if (!data) {
+    throw new ProductValidationError("Produto não encontrado.");
+  }
+}
+
+/**
+ * Move uma imagem para a posição pedida. Nunca deixa duplicidade nem
+ * buraco: remove a imagem da lista atual, insere na posição pedida
+ * (limitada ao intervalo válido) e renumera 0..N-1 a partir daí — ou
+ * seja, qualquer conflito (duas imagens "pedindo" a mesma posição) é
+ * resolvido deslocando as outras, nunca rejeitado nem sobrescrito às
+ * cegas.
+ */
+export async function setImagePosition(
+  productId: string,
+  imageId: string,
+  requestedPosition: number,
+): Promise<void> {
+  if (!Number.isInteger(requestedPosition) || requestedPosition < 0) {
+    throw new ProductValidationError(
+      "Posição inválida — precisa ser um número inteiro maior ou igual a zero.",
+    );
+  }
+
+  const supabase = getSupabaseServiceClient();
+  await assertProductExists(supabase, productId);
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, position")
+    .eq("product_id", productId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `[lib/admin/products] Falha ao carregar imagens: ${error.message}`,
+    );
+  }
+
+  const currentImages = data as { id: string; position: number }[];
+  const currentIds = currentImages.map((image) => image.id);
+
+  if (!currentIds.includes(imageId)) {
+    throw new ProductValidationError(
+      "Imagem não encontrada para este produto.",
+    );
+  }
+
+  const withoutMoved = currentIds.filter((id) => id !== imageId);
+  const clampedIndex = Math.min(requestedPosition, withoutMoved.length);
+  const reordered = [
+    ...withoutMoved.slice(0, clampedIndex),
+    imageId,
+    ...withoutMoved.slice(clampedIndex),
+  ];
+
+  await renumberProductImages(supabase, currentImages, reordered);
+}
+
+/**
+ * Remove uma imagem e fecha o buraco deixado na numeração — sem isso,
+ * apagar a imagem do meio de [0, 1, 2] deixaria [0, 2] em vez de [0, 1],
+ * quebrando a garantia de "position=0 é sempre a principal, sem buracos
+ * nem duplicidade" pro resto do admin.
+ */
+export async function deleteProductImage(
+  productId: string,
+  imageId: string,
+): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  await assertProductExists(supabase, productId);
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, url, position")
+    .eq("product_id", productId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `[lib/admin/products] Falha ao carregar imagens: ${error.message}`,
+    );
+  }
+
+  const currentImages = data as { id: string; url: string; position: number }[];
+  const target = currentImages.find((image) => image.id === imageId);
+  if (!target) {
+    throw new ProductValidationError(
+      "Imagem não encontrada para este produto.",
+    );
+  }
+
+  // Só tenta apagar do Storage quando a URL é realmente deste bucket —
+  // imagens seed antigas (servidas de /public) nunca foram upload real,
+  // "apagar" delas do Storage não faz sentido (e não deve gerar erro).
+  const objectPath = extractStorageObjectPath(target.url);
+  if (objectPath) {
+    const { error: storageError } = await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .remove([objectPath]);
+    if (storageError) {
+      // Não bloqueia a remoção do registro por causa disso — o mais
+      // visível pro admin é a imagem sumir da lista; um objeto órfão no
+      // Storage é recuperável depois, um registro que não some não é.
+      console.error(
+        `[lib/admin/products] Falha ao remover objeto do Storage (${objectPath}): ${storageError.message}`,
+      );
+    }
+  }
+
+  const { error: deleteError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (deleteError) {
+    throw new Error(
+      `[lib/admin/products] Falha ao remover imagem: ${deleteError.message}`,
+    );
+  }
+
+  const remainingImages = currentImages.filter((image) => image.id !== imageId);
+  if (remainingImages.length > 0) {
+    await renumberProductImages(
+      supabase,
+      remainingImages,
+      remainingImages.map((image) => image.id),
+    );
+  }
+}
+
+// =============================================================================
+// Upload (Supabase Storage, bucket "product-images" — ver
+// supabase/migrations/*_create_product_images_storage.sql para o bucket
+// e a policy de leitura pública). Upload/remoção só pelo service role,
+// sempre atrás de requireAdmin() (Server Action em
+// app/admin/(protected)/products/imageActions.ts). Sem compressão/edição
+// automática nesta etapa: o arquivo é gravado como veio, só
+// validado (tipo/tamanho) e renomeado — nunca usa o nome original.
+// =============================================================================
+
+const PRODUCT_IMAGES_BUCKET = "product-images";
+
+/** Mesmo valor do file_size_limit configurado no bucket (ver migration)
+ * — validado aqui também para devolver uma mensagem amigável em vez de
+ * deixar o Storage rejeitar com um erro genérico. */
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+/** Extensão derivada do MIME type já validado — nunca do nome do
+ * arquivo enviado pelo admin. */
+const ALLOWED_IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpeg",
+  "image/webp": "webp",
+  "image/avif": "avif",
+};
+
+function storagePublicUrlPrefix(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error(
+      "[lib/admin/products] NEXT_PUBLIC_SUPABASE_URL não configurada.",
+    );
+  }
+  return `${url}/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
+}
+
+/** Extrai o path do objeto no bucket a partir da URL pública salva em
+ * product_images.url — null quando a URL não é deste bucket (as imagens
+ * seed originais, servidas de /public, nunca foram upload real). */
+function extractStorageObjectPath(url: string): string | null {
+  const prefix = storagePublicUrlPrefix();
+  return url.startsWith(prefix) ? url.slice(prefix.length) : null;
+}
+
+/**
+ * Envia um arquivo para o bucket product-images e cria o registro
+ * correspondente em product_images.
+ *
+ * Posição automática: produto sem nenhuma imagem ainda → position=0;
+ * caso contrário, agrega no fim (maior position atual + 1) — nunca
+ * reaproveita uma position já usada, então nunca gera duplicidade.
+ */
+export async function uploadProductImage(
+  productId: string,
+  file: File,
+): Promise<AdminProductImage> {
+  const extension = ALLOWED_IMAGE_EXTENSIONS[file.type];
+  if (!extension) {
+    throw new ProductValidationError(
+      "Formato de imagem não suportado — envie PNG, JPEG, WebP ou AVIF.",
+    );
+  }
+  if (file.size <= 0) {
+    throw new ProductValidationError("Arquivo vazio.");
+  }
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new ProductValidationError(
+      `Arquivo muito grande — o limite é ${Math.round(MAX_IMAGE_SIZE_BYTES / 1024 / 1024)}MB.`,
+    );
+  }
+
+  const supabase = getSupabaseServiceClient();
+  await assertProductExists(supabase, productId);
+
+  const { data: lastImage, error: lastImageError } = await supabase
+    .from("product_images")
+    .select("position")
+    .eq("product_id", productId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  if (lastImageError) {
+    throw new Error(
+      `[lib/admin/products] Falha ao verificar imagens existentes: ${lastImageError.message}`,
+    );
+  }
+
+  const nextPosition = lastImage.length > 0 ? lastImage[0].position + 1 : 0;
+
+  // Nome nunca depende do original enviado pelo admin — sempre um uuid
+  // gerado aqui, extensão derivada do MIME type já validado acima.
+  const objectPath = `products/${productId}/${randomUUID()}.${extension}`;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { error: uploadError } = await supabase.storage
+    .from(PRODUCT_IMAGES_BUCKET)
+    .upload(objectPath, bytes, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(
+      `[lib/admin/products] Falha ao enviar imagem para o Storage: ${uploadError.message}`,
+    );
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(objectPath);
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("product_images")
+    .insert({ product_id: productId, url: publicUrl, position: nextPosition })
+    .select("id, url, position, alt_text")
+    .single();
+
+  if (insertError) {
+    // Não deixa o arquivo órfão no Storage se o insert falhar (ex.:
+    // corrida rara entre dois uploads simultâneos do mesmo produto
+    // calculando a mesma nextPosition, violando o UNIQUE(product_id,
+    // position)).
+    await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove([objectPath]);
+    throw new Error(
+      `[lib/admin/products] Falha ao registrar imagem: ${insertError.message}`,
+    );
+  }
+
+  const row = inserted as ProductImageRow;
+  return {
+    id: row.id,
+    url: row.url,
+    position: row.position,
+    altText: row.alt_text,
+  };
 }
