@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { Minus, Plus, Trash2, X } from "lucide-react";
+import { Minus, Plus, Trash2, Truck, X } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/cart/CartProvider";
 import { WhatsAppOrderLink } from "@/components/shared/WhatsAppOrderLink";
+import { DeliveryCheckoutForm } from "@/components/checkout/DeliveryCheckoutForm";
 import {
   ProductImagePlaceholder,
   resolveProductImageUrl,
@@ -48,15 +50,31 @@ export function CartSheet() {
   const noProductsResolvedYet =
     items.length > 0 && items.every((item) => !getProduct(item.productId));
 
+  // "cart" = lista de itens + os dois jeitos de enviar o pedido (rápido,
+  // sem entrega, ou com o formulário de entrega). "delivery" = etapa 1 do
+  // checkout com entrega (ver DeliveryCheckoutForm) — o carrinho em si
+  // (localStorage, itens, quantidades) nunca é tocado ao trocar de modo,
+  // só a exibição dentro do Sheet muda.
+  const [mode, setMode] = useState<"cart" | "delivery">("cart");
+
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
+    // Reabrir o carrinho sempre começa na lista de itens, nunca retoma o
+    // formulário de entrega de uma sessão anterior (que não é persistido).
+    if (!open) setMode("cart");
+  };
+
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => setOpen(open)}>
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
         showCloseButton={false}
         className="border-white/10 bg-[#0b0b0b] text-white"
       >
         <SheetHeader className="flex-row items-center justify-between border-b border-white/10">
-          <SheetTitle className="text-white">Carrinho</SheetTitle>
+          <SheetTitle className="text-white">
+            {mode === "cart" ? "Carrinho" : "Entrega"}
+          </SheetTitle>
 
           <SheetClose
             aria-label="Fechar carrinho"
@@ -66,123 +84,140 @@ export function CartSheet() {
           </SheetClose>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4">
-          {items.length === 0 ? (
-            <p className="py-10 text-center text-sm text-white/45">
-              Seu carrinho está vazio.
-            </p>
-          ) : isLoadingProducts && noProductsResolvedYet ? (
-            <p className="py-10 text-center text-sm text-white/45">
-              Carregando itens do carrinho...
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-4 py-2">
-              {items.map((item) => {
-                const product = getProduct(item.productId);
-                if (!product) return null;
+        {mode === "delivery" ? (
+          <DeliveryCheckoutForm onBack={() => setMode("cart")} />
+        ) : (
+          <>
+          <div className="flex-1 overflow-y-auto px-4">
+            {items.length === 0 ? (
+              <p className="py-10 text-center text-sm text-white/45">
+                Seu carrinho está vazio.
+              </p>
+            ) : isLoadingProducts && noProductsResolvedYet ? (
+              <p className="py-10 text-center text-sm text-white/45">
+                Carregando itens do carrinho...
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-4 py-2">
+                {items.map((item) => {
+                  const product = getProduct(item.productId);
+                  if (!product) return null;
 
-                const variant = getVariant(item.productId, item.variantId);
-                // Item tem variantId mas a variante não existe mais
-                // (removida/desativada desde que foi adicionada) — mesmo
-                // tratamento que "produto removido do catálogo": omite a
-                // linha em vez de mostrar dado inconsistente.
-                if (item.variantId && !variant) return null;
+                  const variant = getVariant(item.productId, item.variantId);
+                  // Item tem variantId mas a variante não existe mais
+                  // (removida/desativada desde que foi adicionada) — mesmo
+                  // tratamento que "produto removido do catálogo": omite a
+                  // linha em vez de mostrar dado inconsistente.
+                  if (item.variantId && !variant) return null;
 
-                const price = getItemPrice(item);
-                const imageUrl = resolveProductImageUrl(product);
+                  const price = getItemPrice(item);
+                  const imageUrl = resolveProductImageUrl(product);
 
-                return (
-                  <li
-                    key={`${item.productId}:${item.variantId ?? ""}`}
-                    className="flex gap-3"
-                  >
-                    <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-[#141414]">
-                      {imageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={product.name}
-                          width={80}
-                          height={80}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ProductImagePlaceholder className="h-full w-full" />
-                      )}
-                    </div>
-
-                    <div className="flex flex-1 flex-col justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {product.name}
-                        </p>
-                        {variant && (
-                          <p className="mt-0.5 text-xs text-white/50">
-                            {variantLabel(variant)}
-                          </p>
+                  return (
+                    <li
+                      key={`${item.productId}:${item.variantId ?? ""}`}
+                      className="flex gap-3"
+                    >
+                      <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-[#141414]">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={product.name}
+                            width={80}
+                            height={80}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ProductImagePlaceholder className="h-full w-full" />
                         )}
-                        <p className="mt-0.5 text-xs text-white/45">
-                          {price !== undefined
-                            ? currencyFormatter.format(price)
-                            : "—"}
-                        </p>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 rounded-full border border-white/10 px-1.5 py-1">
-                          <button
-                            type="button"
-                            onClick={() => decrement(item.productId, item.variantId)}
-                            aria-label="Diminuir quantidade"
-                            className="flex size-6 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-                          >
-                            <Minus className="size-3.5" />
-                          </button>
-
-                          <span className="w-4 text-center text-xs text-white">
-                            {item.quantity}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => increment(item.productId, item.variantId)}
-                            aria-label="Aumentar quantidade"
-                            className="flex size-6 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-                          >
-                            <Plus className="size-3.5" />
-                          </button>
+                      <div className="flex flex-1 flex-col justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {product.name}
+                          </p>
+                          {variant && (
+                            <p className="mt-0.5 text-xs text-white/50">
+                              {variantLabel(variant)}
+                            </p>
+                          )}
+                          <p className="mt-0.5 text-xs text-white/45">
+                            {price !== undefined
+                              ? currencyFormatter.format(price)
+                              : "—"}
+                          </p>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.productId, item.variantId)}
-                          aria-label={`Remover ${product.name}`}
-                          className="flex size-7 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 rounded-full border border-white/10 px-1.5 py-1">
+                            <button
+                              type="button"
+                              onClick={() => decrement(item.productId, item.variantId)}
+                              aria-label="Diminuir quantidade"
+                              className="flex size-6 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
 
-        <SheetFooter className="border-t border-white/10">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/60">Subtotal</span>
-            <span className="font-semibold text-white">
-              {currencyFormatter.format(subtotal)}
-            </span>
+                            <span className="w-4 text-center text-xs text-white">
+                              {item.quantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => increment(item.productId, item.variantId)}
+                              aria-label="Aumentar quantidade"
+                              className="flex size-6 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.productId, item.variantId)}
+                            aria-label={`Remover ${product.name}`}
+                            className="flex size-7 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
-          <WhatsAppOrderLink />
+          <SheetFooter className="border-t border-white/10">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/60">Subtotal</span>
+              <span className="font-semibold text-white">
+                {currencyFormatter.format(subtotal)}
+              </span>
+            </div>
 
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">
-            Preços demonstrativos
-          </p>
-        </SheetFooter>
+            <WhatsAppOrderLink />
+
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMode("delivery")}
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/5"
+              >
+                <Truck className="size-4" />
+                Comprar com entrega (fora da cidade)
+              </button>
+            )}
+
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">
+              Preços demonstrativos
+            </p>
+          </SheetFooter>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );
