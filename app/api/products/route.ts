@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAllProducts, getProductsByIds } from "@/lib/products";
 
+/** Nenhum carrinho real da Krema referencia mais que algumas dezenas de
+ * produtos distintos — limite generoso só para recusar um `ids=` absurdo
+ * (milhares de entradas forçando um IN (...) enorme contra o Supabase)
+ * antes de gastar qualquer trabalho de servidor/banco com ele. */
+const MAX_IDS = 100;
+
 /**
  * GET /api/products
  * GET /api/products?ids=slug-a,slug-b
@@ -17,16 +23,27 @@ export async function GET(request: Request) {
   const idsParam = searchParams.get("ids");
 
   try {
-    const products = idsParam
-      ? await getProductsByIds(
-          idsParam
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean),
-        )
-      : await getAllProducts();
+    let products;
+    if (idsParam) {
+      const ids = idsParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .slice(0, MAX_IDS);
+      products = await getProductsByIds(ids);
+    } else {
+      products = await getAllProducts();
+    }
 
-    return NextResponse.json({ products });
+    // Dado público, igual para todo mundo, muda pouco de um minuto para
+    // o outro — cacheável em CDN/proxy sem risco de servir dado
+    // desatualizado por muito tempo. s-maxage é o que importa para
+    // cache compartilhado (CDN); stale-while-revalidate evita que um
+    // pico de tráfego logo após a expiração espere a resposta nova.
+    return NextResponse.json(
+      { products },
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
+    );
   } catch (error) {
     // Detalhe completo só no log do servidor — nunca no corpo da resposta.
     // Esta rota é pública (qualquer origem pode chamá-la), então a
